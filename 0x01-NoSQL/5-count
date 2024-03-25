@@ -1,0 +1,3 @@
+// Count the nuber of documents in the collection
+
+db.school.count()
