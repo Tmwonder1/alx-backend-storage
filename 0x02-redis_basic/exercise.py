@@ -13,8 +13,8 @@ def count_calls(method: Callable) -> Callable:
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         '''wrap the decorated function and return the wrapper'''
-        self.__redis.incr(key)
-        return method(self, *args, *kwargs)
+        self._redis.incr(key)
+        return method(self, *args, **kwargs)
     return wrapper
 
 
@@ -32,7 +32,7 @@ def call_history(method: Callable) -> Callable:
 
 
 def replay(fn: Callable):
-    '''display the history of calls of a particular function'''
+    '''display the history of calls of a particular function.'''
     r = redis.Redis()
     func_name = fn.__qualname__
     c = r.get(func_name)
@@ -71,7 +71,7 @@ class Cache:
         return rkey
 
     def get(self, key: str,
-            fn: Optional[Callable] = None) -> Uninon[str, bytes, int, float]:
+            fn: Optional[Callable] = None) -> Union[str, bytes, int, float]:
         '''convert the data back to the desired format'''
         value = self._redis.get(key)
         if fn:
