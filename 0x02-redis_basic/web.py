@@ -5,38 +5,46 @@ web cache and tracker
 
 import redis
 import requests
-from functools import wraps
+import time
 
+# Initialize Redis client
 r = redis.Redis()
 
 
-def url_access_count(method):
-    """decorator for get_page function"""
-    @wraps(method)
+def count_url_access(method):
+    """Decorator counting how many times a URL is accessed"""
     def wrapper(url):
-        """wrapper function"""
-        key = "cached:" + url
-        cached_value = r.get(key)
-        if cached_value:
-            return cached_value.decode("utf-8")
+        # Generate keys for cache and counter
+        count_key = "count:" + url
 
-            # Get new content and update cache
-        key_count = "count:" + url
+        # Increment access count for the URL
+        r.incr(count_key)
+
+        # Call the method to get HTML content
         html_content = method(url)
 
-        r.incr(key_count)
-        r.set(key, html_content, ex=10)
-        r.expire(key, 10)
+        # Cache the HTML content with expiration time of 10 seconds
+        cache_key = "cached:" + url
+        r.setex(cache_key, html_content, 10)
+
         return html_content
     return wrapper
 
 
-@url_access_count
+@count_url_access
 def get_page(url: str) -> str:
-    """obtain the HTML content of a particular"""
-    results = requests.get(url)
-    return results.text
+    """Obtain the HTML content of a particular URL"""
+    res = requests.get(url)
+    return res.text
 
 
 if __name__ == "__main__":
-    get_page('http://slowwly.robertomurray.co.uk')
+    # Test the function with a slow response URL
+    print(get_page('http://slowwly.robertomurray.co.uk'))
+
+    # Test caching behavior
+    print(get_page('http://slowwly.robertomurray.co.uk'))
+
+    # Verify count increment
+    count_key = "count:http://slowwly.robertomurray.co.uk"
+    print("Count:", r.get(count_key))
